@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/utils/authservice.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({Key? key}) : super(key: key);
+  final String? returnTo; // Optional route to return to after login
+  final VoidCallback? onLoginSuccess; // Optional callback function
+
+  const LoginPage({super.key, this.returnTo, this.onLoginSuccess});
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -13,6 +19,10 @@ class _LoginPageState extends State<LoginPage> {
   final _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
   bool _isLoading = false;
+
+  // Replace with your actual API base URL
+  static const String baseUrl = 'http://10.0.2.2:3030/api/auth/signin';
+  final AuthService _authService = AuthService();
 
   @override
   void dispose() {
@@ -27,23 +37,95 @@ class _LoginPageState extends State<LoginPage> {
         _isLoading = true;
       });
 
-      // Simulate API call
-      await Future.delayed(const Duration(seconds: 2));
+      try {
+        final response = await http.post(
+          Uri.parse(baseUrl),
+          headers: {'Content-Type': 'application/json'},
+          body: json.encode({
+            'email': _emailController.text.trim(),
+            'password': _passwordController.text,
+          }),
+        );
 
-      setState(() {
-        _isLoading = false;
-      });
+        final responseData = json.decode(response.body);
 
-      // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Login successful!'),
-          backgroundColor: Colors.green,
-        ),
-      );
+        if (response.statusCode == 201) {
+          // Success - store tokens
+          final accessToken = responseData['accessToken'];
+          final refreshToken = responseData['refreshToken'];
 
-      // Here you would typically navigate to the next screen
-      // Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => HomePage()));
+          _authService.setTokens(accessToken, refreshToken);
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(responseData['message'] ?? 'Login successful!'),
+                backgroundColor: Colors.green,
+              ),
+            );
+
+            // Handle navigation after successful login
+            if (widget.onLoginSuccess != null) {
+              // If a callback is provided, call it
+              widget.onLoginSuccess!();
+            } else if (widget.returnTo != null) {
+              // If a specific route is provided, navigate to it
+              Navigator.pushReplacementNamed(context, widget.returnTo!);
+            } else {
+              // Default behavior: pop back to previous screen
+              // This works when login is accessed via push from another screen
+              Navigator.pop(context, true); // true indicates successful login
+            }
+          }
+        } else {
+          // Handle error responses
+          String errorMessage = 'Login failed';
+
+          switch (response.statusCode) {
+            case 409:
+              errorMessage =
+                  responseData['message'] ?? "Account doesn't exist.";
+              break;
+            case 401:
+              errorMessage =
+                  responseData['message'] ?? 'Email or password is wrong.';
+              break;
+            case 500:
+              errorMessage =
+                  responseData['message'] ?? 'Server error occurred.';
+              break;
+            default:
+              errorMessage =
+                  responseData['message'] ?? 'An unexpected error occurred.';
+          }
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(errorMessage),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        // Handle network or other errors
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Network error. Please check your connection.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        print('Login error: $e'); // For debugging
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      }
     }
   }
 
@@ -51,6 +133,14 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[100],
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.grey[800]),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -85,7 +175,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Sign in to your account',
+                        'Sign In to your account',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Colors.grey[600],
                         ),
@@ -167,6 +257,7 @@ class _LoginPageState extends State<LoginPage> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                             elevation: 2,
+                            backgroundColor: Colors.white,
                           ),
                           child:
                               _isLoading

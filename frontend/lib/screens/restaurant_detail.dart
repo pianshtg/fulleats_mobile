@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/models/cart_item.dart';
 import 'package:frontend/models/restaurant.dart';
+import 'package:frontend/screens/login.dart';
+import 'package:frontend/utils/authservice.dart';
 
 class RestaurantDetailScreen extends StatefulWidget {
   final Restaurant restaurant;
@@ -17,6 +19,8 @@ class RestaurantDetailScreen extends StatefulWidget {
 }
 
 class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
+  final AuthService _authService = AuthService();
+
   void _addToCart(String itemName, double price) {
     setState(() {
       // Check if item already exists in cart
@@ -45,12 +49,127 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
     );
   }
 
+  bool _isUserLoggedIn() {
+    final accessToken = _authService.getAccessToken();
+    final refreshToken = _authService.getRefreshToken();
+
+    // User is logged in if either access token or refresh token exists
+    return (accessToken != null && accessToken.isNotEmpty) ||
+        (refreshToken != null && refreshToken.isNotEmpty);
+  }
+
+  void _handleCheckout() {
+    if (_isUserLoggedIn()) {
+      // User is logged in, proceed with checkout
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Order placed successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      setState(() {
+        widget.cart.clear();
+      });
+    } else {
+      // User is not logged in, show login required message
+      Navigator.of(context).pop(); // Close cart dialog first
+      _showLoginRequiredDialog();
+    }
+  }
+
+  void _showLoginRequiredDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.login, color: Colors.orange),
+              SizedBox(width: 8),
+              Text('Login Required'),
+            ],
+          ),
+          content: Text(
+            'You need to log in to place an order. Would you like to go to the login page?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _navigateToLogin();
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+              child: Text('Go to Login'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _navigateToLogin() async {
+    // Navigate to login page and wait for result
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder:
+            (context) => LoginPage(
+              onLoginSuccess: () {
+                // After successful login, pop back to this page
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'Successfully logged in! You can now checkout.',
+                    ),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              },
+            ),
+      ),
+    );
+
+    // Alternative: If you prefer to use named routes
+    // final result = await Navigator.pushNamed(context, '/login');
+
+    // Check if login was successful (if using Navigator.pop with result)
+    if (result == true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Successfully logged in! You can now checkout.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.restaurant.name),
         backgroundColor: Colors.orange,
+        actions: [
+          // Optional: Add login status indicator
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: Center(
+              child:
+                  _isUserLoggedIn()
+                      ? Icon(Icons.account_circle, color: Colors.white)
+                      : Icon(
+                        Icons.account_circle_outlined,
+                        color: Colors.white70,
+                      ),
+            ),
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -203,14 +322,7 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
               child: Text('Close'),
             ),
             ElevatedButton(
-              onPressed: () {
-                // Checkout functionality would go here
-                Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Order placed successfully!')),
-                );
-                widget.cart.clear();
-              },
+              onPressed: _handleCheckout,
               style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
               child: Text('Checkout'),
             ),

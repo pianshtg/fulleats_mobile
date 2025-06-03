@@ -122,24 +122,18 @@ async function getUser(req: Request, res: Response) {
         const accessToken = req.accessToken
         const newAccessToken = req.newAccessToken
         const metaData = jwt.decode(accessToken!) as jwt.JwtPayload
-        const permissions = metaData.permissions
 
-        if (permissions.includes('get_user')) {
-            // Checking if the user exists in the database.
-            const [user] = await pool.execute<RowDataPacket[]>('SELECT * FROM users WHERE id = ?', [metaData.user_id])
-            if (user.length === 0) {
-                res.status(409).json({message: "User not found."})
-                return
-            } else {
-                res.status(200).json({
-                    user: user[0],
-                    newAccessToken
-                })
-                return
-            }
+        // Checking if the user exists in the database.
+        const [user] = await pool.execute<RowDataPacket[]>('SELECT * FROM user WHERE id = ?', [metaData.user_id])
+        if (user.length === 0) {
+            res.status(409).json({message: "User not found."})
+            return;
         } else {
-            res.status(401).json({message: "Unauthorized."})
-            return
+            res.status(200).json({
+                user: user[0],
+                newAccessToken
+            })
+            return;
         }
         
     } catch (error) {

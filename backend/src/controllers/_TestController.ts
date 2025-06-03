@@ -11,7 +11,7 @@ async function test (req: Request, res: Response) {
         const new_hashed_password_arr: string[] = await Promise.all(
             email.map( async (x: string, index: number ) => {
                 let new_hashed_password = await bcrypt.hash(new_password[index], 10)
-                await pool.execute<RowDataPacket[]>('UPDATE users_hashed_password SET hashed_password = ? WHERE user_id = (SELECT id FROM users WHERE email = ?)', [new_hashed_password, x])
+                await pool.execute<RowDataPacket[]>('UPDATE hashed_password SET hashed_password = ? WHERE user_id = (SELECT id FROM user WHERE email = ?)', [new_hashed_password, x])
                 return new_hashed_password
         })
         )
@@ -23,7 +23,7 @@ async function test (req: Request, res: Response) {
         })
         return
     } catch (error) {
-        console.error(error) // Debug.
+        console.error(error)
         res.status(500).json({message: "Error testing."})
         return
     }

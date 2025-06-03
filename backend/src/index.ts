@@ -1,13 +1,10 @@
 import "dotenv/config";
 import express, { Request, Response } from 'express'
 import {v2 as cloudinary} from 'cloudinary'
-import helmet from 'helmet'
-import cors from 'cors'
-import cookieParser from 'cookie-parser'
-import { csrfProtection } from './middlewares/csurf'
 import authenticationRoute from './routes/AuthenticationRoute'
 import testRoute from './routes/_TestRoute'
 import userRoute from './routes/UserRoute'
+import restaurantRoute from './routes/RestaurantRoute'
 import { clientType, jwtCheck } from './middlewares/auth'
 import { testConnection } from './database'
 
@@ -20,14 +17,7 @@ cloudinary.config({
 })
 
 // Middlewares
-app.use(helmet())
 app.use(express.json())
-app.use(cors({
-    origin:['http://localhost:5173'],
-    credentials: true
-}))
-app.use(cookieParser())
-app.use(csrfProtection)
 
 // Health Check
 app.get("/", async (req: Request, res: Response) => {
@@ -40,6 +30,7 @@ app.use("/api/test", testRoute)
 // Routes
 app.use("/api/auth", authenticationRoute)
 app.use("/api/user", clientType, jwtCheck, userRoute)
+app.use("/api/restaurant", restaurantRoute)
 
 // Start Server
 async function startServer() {
