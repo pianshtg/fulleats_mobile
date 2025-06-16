@@ -21,7 +21,7 @@ class _LoginPageState extends State<LoginPage> {
   bool _isLoading = false;
 
   // Replace with your actual API base URL
-  static const String baseUrl = 'http://10.0.2.2:3030/api/auth/signin';
+  static const String baseUrl = 'http://172.20.10.3:3030/api/auth/signin';
   final AuthService _authService = AuthService();
 
   @override

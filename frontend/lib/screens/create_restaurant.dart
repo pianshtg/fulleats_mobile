@@ -27,7 +27,7 @@ class _CreateRestaurantScreenState extends State<CreateRestaurantScreen> {
   List<Item> menuItems = [];
   bool _isLoading = false;
 
-  static const String baseUrl = 'http://10.0.2.2:3030/api/restaurant';
+  static const String baseUrl = 'http://172.20.10.3:3030/api/restaurant';
 
   void _addMenuItem() {
     if (_menuItemNameController.text.isNotEmpty &&

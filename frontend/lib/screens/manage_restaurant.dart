@@ -20,7 +20,7 @@ class _ManageRestaurantScreenState extends State<ManageRestaurantScreen> {
   String? _errorMessage;
   List<Item> menuItems = [];
 
-  static const String baseUrl = 'http://10.0.2.2:3030/api/restaurant';
+  static const String baseUrl = 'http://172.20.10.3:3030/api/restaurant';
 
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _priceController = TextEditingController();

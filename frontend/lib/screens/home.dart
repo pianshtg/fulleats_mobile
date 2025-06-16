@@ -37,7 +37,7 @@ class _HomeScreenState extends State<HomeScreen> {
       });
 
       final response = await http.get(
-        Uri.parse('http://10.0.2.2:3030/api/restaurant/all'),
+        Uri.parse('http://172.20.10.3:3030/api/restaurant/all'),
         headers: {'Content-Type': 'application/json'},
       );
 

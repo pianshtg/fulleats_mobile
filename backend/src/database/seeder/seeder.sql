@@ -43,6 +43,18 @@ INSERT INTO user (
     NULL
 );
 
+INSERT INTO user (
+    id,
+    email,
+    name,
+    image_url
+) VALUES (
+    UUID(),
+    'pizza.pengkolan123@example.com',
+    'pizza',
+    NULL
+);
+
 INSERT INTO hashed_password (
     user_id,
     hashed_password
@@ -53,6 +65,18 @@ INSERT INTO hashed_password (
         WHERE email = 'admin@example.com'
     ),
     'admin'
+);
+
+INSERT INTO hashed_password (
+    user_id,
+    hashed_password
+) VALUES (
+    (
+        SELECT id
+        FROM user
+        WHERE email = 'pizza.pengkolan123@example.com'
+    ),
+    'pizza'
 );
 
 -- Restaurant 1: Pizza Pengkolan
